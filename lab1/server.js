@@ -16,7 +16,7 @@ app.use((req, res, next)=> {
 
 app.get("/", (req, res)=>{
     structure = rinex_parser.getJson();
-   res.send(structure);
+   res.send(JSON.stringify(structure, null, "\t"));
 });
 
 const server = app.listen(process.env.PORT || '5000', ()=> {
