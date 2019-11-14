@@ -1,5 +1,7 @@
 const fs = require('fs');
 
+const config = require('../config/config');
+
 module.exports = {
     deltaN: null,
     m0: null,
@@ -23,7 +25,7 @@ module.exports = {
     tPC: null,
     num: null,
 
-    m: 3.986005 * 10e+14,
+    m: 3.986005e+14,
 
     map: {},
 
@@ -33,7 +35,7 @@ module.exports = {
 
     eps: 0.000000000001,
 
-    omega3: 7.2921151467 * 10e-5,
+    omega3: 7.2921151467e-5,
 
     __init() {
         this.tPC = new Date(2019, 8, 13, 0, 0, 0);
@@ -86,7 +88,7 @@ module.exports = {
 
 
     __parseFile() {
-        let contents = fs.readFileSync('echo2560.19n', 'utf8');
+        let contents = fs.readFileSync(`${config.files.rinex}`, 'utf8');
         let bodyStart = contents.indexOf('END OF HEADER') + 'END OF HEADER'.length + 1;
 
         let currentIndex = 0;
@@ -282,12 +284,8 @@ module.exports = {
 
       let EKnew = EK + (MK - EK + element.e0*Math.sin(EK)) / (1 - element.e0 * Math.cos(EK));
 
-      // let MKnew = EK - element.e0 * Math.sin(EK);
-      // let EKnew = EK + (MKnew - EK + element.e0 * Math.sin(EK)) / (1 - element.e0 * Math.cos(EK));
-
       while(Math.abs(EKnew - EK) > this.eps){
           EK = EKnew;
-          // MKnew = EK - element.e0 * Math.sin(EK);
           EKnew = EK + (MK - EK + element.e0 * Math.sin(EK)) / (1 - element.e0 * Math.cos(EK));
       }
 
@@ -298,9 +296,6 @@ module.exports = {
         this.__init();
         this.__parseFile();
         this.__calculate();
-        console.log(this.map);
-        return {
-            map: this.map
-        };
+        return this.map;
     }
 };

@@ -1,6 +1,6 @@
 const express = require('express');
 
-const rinex_parser = require('./module/rinex_parser')
+const tableEditor = require('./module/table editor');
 
 let app = express();
 
@@ -15,8 +15,10 @@ app.use((req, res, next)=> {
 });
 
 app.get("/", (req, res)=>{
-    structure = rinex_parser.getJson();
-   res.send(JSON.stringify(structure, null, "\t"));
+   //  let structure = rinex_parser.getJson();
+   //  let sp3 = sp3_parser.getJSON();
+   // res.send(JSON.stringify(structure, null, "\t"));
+    res.send(tableEditor.getTable());
 });
 
 const server = app.listen(process.env.PORT || '5000', ()=> {
