@@ -5,6 +5,10 @@ const config = require('../config/config')
 module.exports = {
     map: {},
 
+    __init(){
+      this.map = {}
+    },
+
     __parseFile(){
         let contents = fs.readFileSync(`${config.files.sp3}`, 'utf8');
         let bodyStart = contents.indexOf('CLK:CMB') + 'CLK:CMB'.length + 1;
@@ -132,6 +136,7 @@ module.exports = {
     },
     getJSON() {
         // let sp3 = sp3_parser.__parseFile();
+        this.__init();
         this.__parseFile();
         return this.map
     }

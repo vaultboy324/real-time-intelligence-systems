@@ -4,7 +4,7 @@ const config = require('../../../config/config');
 
 class Table extends React.Component {
     state = {
-        columns: ['Номер спутника', 'Год', 'Месяц', 'День', 'Час', 'Минута', 'Секунда', 'deltaX(Метры)', 'deltaY(Метры)', 'deltaZ(Метры)'],
+        columns: ['Номер спутника', 'Год', 'Месяц', 'День', 'Час', 'Минута', 'Секунда', 'ΔX(Метры)', 'ΔY(Метры)', 'ΔZ(Метры)'],
         rows: []
     };
 

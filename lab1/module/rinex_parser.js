@@ -39,7 +39,7 @@ module.exports = {
 
     __init() {
         this.tPC = new Date(2019, 8, 13, 0, 0, 0);
-
+        this.map = {};
     },
 
     __toFloat(value) {
