@@ -290,7 +290,7 @@ module.exports = {
     __getSum(r) {
         let result = 0;
         r.forEach((element, index) => {
-            r += Math.pow(element, 2);
+            result += Math.pow(element, 2);
         });
 
         return result;
