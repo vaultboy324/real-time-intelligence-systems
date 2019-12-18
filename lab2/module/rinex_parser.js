@@ -37,6 +37,8 @@ module.exports = {
 
     omega3: 7.2921151467e-5,
 
+    C: -4.44280763310,
+
     __init() {
         this.tPC = new Date(2019, 8, 13, 0, 0, 0);
         this.map = {};
@@ -129,9 +131,9 @@ module.exports = {
 
             let dayNum = 256;
 
-            let useless = this.__getValue(oParameters);
-            useless = this.__getValue(oParameters);
-            useless = this.__getValue(oParameters);
+            let af0 = this.__getValue(oParameters);
+            af1 = this.__getValue(oParameters);
+            af2 = this.__getValue(oParameters);
 
             let IODE = this.__getValue(oParameters);
 
@@ -167,13 +169,13 @@ module.exports = {
 
             let IDOT = this.__getValue(oParameters);
 
-            useless = this.__getValue(oParameters);
+            let useless = this.__getValue(oParameters);
 
             let nGPS = this.__getValue(oParameters);
 
             useless = this.__getValue(oParameters);
             useless = this.__getValue(oParameters);
-            useless = this.__getValue(oParameters);
+            let TGD = this.__getValue(oParameters);
             useless = this.__getValue(oParameters);
             useless = this.__getValue(oParameters);
             useless = this.__getValue(oParameters);
@@ -199,7 +201,11 @@ module.exports = {
                 omega,
                 OMEGADOT,
                 IDOT,
-                nGPS
+                nGPS,
+                af0,
+                af1,
+                af2,
+                TGD
             };
             this.map[key].push(node);
         }
@@ -264,13 +270,20 @@ module.exports = {
                let derivativeYSVK = derivativeOMEGAK * xSVK + derivativeXPlane * Math.sin(OMEGAK) + (derivativeYPlane * Math.cos(IK) - yPlane * derivativeIK * Math.sin(IK)) * Math.cos(OMEGAK);
                let derivativeZSVK = yPlane * derivativeIK * Math.sin(IK) + derivativeYPlane * Math.sin(IK);
 
+               let deltaTR = this.C * element.e0 * element.sqrtA * Math.sin(EK);
+               let offset = element.af0 + tK * (element.af1 + tK * element.af2) + deltaTR - element.TGD;
+               // let offset = element.af0 + element.af1 * tK + element.af2 * (tK ** 2) - element.TGD;
+
                result = {
                    xSVK,
                    ySVK,
                    zSVK,
                    derivativeXSVK,
                    derivativeYSVK,
-                   derivativeZSVK
+                   derivativeZSVK,
+                   dayNum,
+                   offset,
+                   t
                };
 
                this.map[key][index].result = result;

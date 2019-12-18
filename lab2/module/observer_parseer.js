@@ -33,6 +33,9 @@ module.exports = {
 
     minSum: 0,
 
+    X: [0, 0, 0, 0],
+    dX: [0, 0, 0, 0],
+
     __parseFile() {
         let contents = fs.readFileSync(`${config.files.observer}`, 'utf8');
         let beforeCoords = contents.indexOf('ANT # / TYPE') + 'ANT # / TYPE'.length + 2;
@@ -48,12 +51,17 @@ module.exports = {
         this.perfectX = this.__getValue(oParameters);
         console.log(this.perfectX);
 
+        this.dX[0] = this.perfectX;
+
         this.perfectY = this.__getValue(oParameters);
         console.log(this.perfectY);
+
+        this.dX[1] = this.perfectY;
 
         this.perfectZ = this.__getValue(oParameters);
         console.log(this.perfectZ);
 
+        this.dX[2] = this.perfectZ;
 
         let bodyStart = contents.indexOf('END OF HEADER') + 'END OF HEADER'.length + 2;
 
@@ -113,7 +121,7 @@ module.exports = {
         try {
             this.keys.forEach((key, index) => {
                 this.map[key].c = this.__getC(oParameters);
-                if (index === 3) {
+                if (index === 10) {
                     throw BreakException;
                 }
             });
@@ -209,38 +217,51 @@ module.exports = {
     __createList(rinexData) {
         let result = [];
 
-        this.keys.forEach((key, index) => {
-            if (index <= 3) {
-                result.push(rinexData[key][0])
-            }
+        let BreakException = {};
+
+        let mustBeRemoved = [];
+
+        try {
+            this.keys.forEach((key, index) => {
+                if(rinexData[key][0].tOC.getTime() === this.time.getTime())
+                {
+                    result.push(rinexData[key][0])
+                }
+                else {
+                    mustBeRemoved.push(index);
+                }
+                if(result.length === 4){
+                    throw BreakException
+                }
+            });
+        } catch {
+
+        }
+
+        let counter = 0;
+        mustBeRemoved.forEach((element, index)=>{
+            this.keys.splice(element - counter, 1);
+            ++counter
         });
 
         return result;
     },
 
-    __getJ() {
+    __getJ(r) {
         let result = [];
 
         let row = [];
         this.keys.forEach((key, index) => {
 
             if (index < 4) {
-                let element = (this.result.x - this.rinexList[index].result.xSVK) /
-                    Math.sqrt(Math.pow(this.result.x - this.rinexList[index].result.xSVK, 2) +
-                        Math.pow(this.result.y - this.rinexList[index].result.ySVK, 2) +
-                        Math.pow(this.result.z - this.rinexList[index].result.zSVK, 2));
+
+                let element = (this.dX[0] - this.rinexList[index].result.xSVK) / r[index];
                 row.push(element);
 
-                element = (this.result.y - this.rinexList[index].result.ySVK) /
-                    Math.sqrt(Math.pow(this.result.x - this.rinexList[index].result.xSVK, 2) +
-                        Math.pow(this.result.y - this.rinexList[index].result.ySVK, 2) +
-                        Math.pow(this.result.z - this.rinexList[index].result.zSVK, 2));
+                element = (this.dX[1] - this.rinexList[index].result.ySVK) / r[index];
                 row.push(element);
 
-                element = (this.result.z - this.rinexList[index].result.zSVK) /
-                    Math.sqrt(Math.pow(this.result.x - this.rinexList[index].result.xSVK, 2) +
-                        Math.pow(this.result.y - this.rinexList[index].result.ySVK, 2) +
-                        Math.pow(this.result.z - this.rinexList[index].result.zSVK, 2));
+                element = (this.dX[2] - this.rinexList[index].result.zSVK) / r[index];
                 row.push(element);
 
                 element = this.lightSpeed;
@@ -260,9 +281,11 @@ module.exports = {
 
         this.keys.forEach((key, index) => {
             if (index < 4) {
-                result.push(this.map[key].c - Math.sqrt(Math.pow(this.result.x - this.rinexList[index].result.xSVK, 2) +
-                    Math.pow(this.result.y - this.rinexList[index].result.ySVK, 2) +
-                    Math.pow(this.result.z - this.rinexList[index].result.zSVK, 2)) + this.result.deltaT * this.lightSpeed);
+                let fixedC = this.map[key].c ;
+
+                result.push(fixedC - Math.sqrt(Math.pow(this.dX[0] - this.rinexList[index].result.xSVK, 2) +
+                    Math.pow(this.dX[1] - this.rinexList[index].result.ySVK , 2) +
+                    Math.pow(this.dX[2] - this.rinexList[index].result.zSVK, 2))  + this.result.deltaT * this.lightSpeed);
 
             }
         });
@@ -283,6 +306,9 @@ module.exports = {
                 flag = false;
                 this.minSum = temp;
             }
+            else {
+                debugger;
+            }
         }
         return flag;
     },
@@ -301,34 +327,80 @@ module.exports = {
 
         this.rinexList = this.__createList(rinexData);
 
-        let J = this.__getJ();
+        let perfectCoords = [this.perfectX, this.perfectY, this.perfectZ, 0];
+
         let r = this.__getR();
+        let J = this.__getJ(r);
 
-        let currentVector = [this.result.x, this.result.y, this.result.z, this.result.deltaT];
+        while (!this.__checkEnd(r)){
+            this.dX = math.subtract(this.dX, math.multiply(math.inv(J), r));
 
-        let right = math.inv(J);
-        right = math.multiply(right, r);
-        let newArr = math.subtract(currentVector, right);
-
-        while (!this.__checkEnd(r)) {
-            this.result.x = newArr[0];
-            this.result.y = newArr[1];
-            this.result.z = newArr[2];
-            this.result.deltaT = newArr[3];
-
-            J = this.__getJ();
             r = this.__getR();
+            J = this.__getJ(r);
 
-            currentVector = [this.result.x, this.result.y, this.result.z, this.result.deltaT];
-
-            right = math.inv(J);
-            right = math.multiply(right, r);
-            newArr = math.subtract(currentVector, right);
+            // this.dX = math.subtract(this.dX, math.multiply(math.inv(J), r));
         }
 
-        return newArr;
+        // let r = this.__getR();
+        // let J = this.__getJ(r);
+        //
+        // let dX = math.inv(J);
+        // dX = math.multiply(dX, r);
+        // this.dX = math.subtract(this.dX, dX);
+        //
+        // while (!this.__checkEnd(r)){
+        //     r = this.__getR();
+        //     J = this.__getJ(r);
+        //
+        //     dX = math.inv(J);
+        //     dX = math.multiply(dX, r);
+        //     this.dX = math.subtract(this.dX, dX);
+        //     debugger;
+        //
+        //     // let r = this.__getR();
+        //     // let J = this.__getJ(r);
+        //     //
+        //     // let dX = math.inv(J);
+        //     // dX = math.multiply(dX, r);
+        //     // X = math.subtract(X, dX);
+        //     //
+        //     // this.result.x = X[0];
+        //     // this.result.y = X[1];
+        //     // this.result.z = X[2];
+        //     // this.result.deltaT = X[3];
+        //     //
+        //     // console.log(math.subtract(perfectCoords, X));
+        // }
+        //
+        // // let currentVector = [this.result.x, this.result.y, this.result.z, this.result.deltaT];
+        // //
+        // // let right = math.inv(J);
+        // // right = math.multiply(right, r);
+        // // let newArr = math.subtract(currentVector, right);
+        // //
+        // // let perfectCoords = [this.perfectX, this.perfectY, this.perfectZ, 0];
+        // //
+        // // while (!this.__checkEnd(r)) {
+        // //     currentVector = math.subtract(currentVector, newArr);
+        // //     // this.result.x = newArr[0];
+        // //     // this.result.y = newArr[1];
+        // //     // this.result.z = newArr[2];
+        // //     // this.result.deltaT = newArr[3];
+        // //
+        // //     r = this.__getR();
+        // //     J = this.__getJ(r);
+        // //
+        // //     // currentVector = [this.result.x, this.result.y, this.result.z, this.result.deltaT];
+        // //
+        // //     let right = math.inv(J);
+        // //     right = math.multiply(right, r);
+        // //     newArr = math.subtract(currentVector, right);
+        // //
+        // //
+        // // }
+        //
+        return math.subtract(perfectCoords, this.dX);
 
-        // this.__getNewResult();
 
     },
 };
