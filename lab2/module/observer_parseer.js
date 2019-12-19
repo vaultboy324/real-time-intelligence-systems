@@ -33,8 +33,8 @@ module.exports = {
 
     minSum: 0,
 
-    X: [0, 0, 0, 0],
-    dX: [0, 0, 0, 0],
+    X: [0, 0, 0, 1],
+    dX: [0, 0, 0, 1],
 
     __parseFile() {
         let contents = fs.readFileSync(`${config.files.observer}`, 'utf8');
@@ -51,17 +51,17 @@ module.exports = {
         this.perfectX = this.__getValue(oParameters);
         console.log(this.perfectX);
 
-        this.dX[0] = this.perfectX;
+        // this.dX[0] = this.perfectX;
 
         this.perfectY = this.__getValue(oParameters);
         console.log(this.perfectY);
 
-        this.dX[1] = this.perfectY;
+        // this.dX[1] = this.perfectY;
 
         this.perfectZ = this.__getValue(oParameters);
         console.log(this.perfectZ);
 
-        this.dX[2] = this.perfectZ;
+        // this.dX[2] = this.perfectZ;
 
         let bodyStart = contents.indexOf('END OF HEADER') + 'END OF HEADER'.length + 2;
 
@@ -254,14 +254,27 @@ module.exports = {
         this.keys.forEach((key, index) => {
 
             if (index < 4) {
+                let t = this.rinexList[index].result.dayNum * 86400 +  this.time.getHours() * 3600 + this.time.getMinutes() * 60 + this.time.getSeconds();
 
-                let element = (this.dX[0] - this.rinexList[index].result.xSVK) / r[index];
+                let fixedC = this.map[key].c + this.rinexList[index].result.offset * this.lightSpeed;
+
+                // let t = this.rinexList[index].result.dayNum * 86400 + this.time.getHours() * 3600 + this.time.getMinutes() * 60 + this.time.getSeconds();
+
+                let delta = t - fixedC / this.lightSpeed;
+
+                let element = (this.X[0]  - this.rinexList[index].result.xSVK * delta) / (Math.sqrt(Math.pow(this.X[0]  - this.rinexList[index].result.xSVK * delta, 2) +
+                    Math.pow(this.X[1]  - this.rinexList[index].result.ySVK * delta , 2) +
+                    Math.pow(this.X[2]  - this.rinexList[index].result.zSVK * delta, 2))  + this.result.deltaT * this.lightSpeed);
                 row.push(element);
 
-                element = (this.dX[1] - this.rinexList[index].result.ySVK) / r[index];
+                element = (this.X[1]  - this.rinexList[index].result.ySVK * delta) / (Math.sqrt(Math.pow(this.X[0]  - this.rinexList[index].result.xSVK * delta, 2) +
+                    Math.pow(this.X[1]  - this.rinexList[index].result.ySVK * delta , 2) +
+                    Math.pow(this.X[2]  - this.rinexList[index].result.zSVK * delta, 2))  + this.result.deltaT * this.lightSpeed);
                 row.push(element);
 
-                element = (this.dX[2] - this.rinexList[index].result.zSVK) / r[index];
+                element = (this.X[2]  - this.rinexList[index].result.zSVK * delta) / (Math.sqrt(Math.pow(this.X[0] - this.rinexList[index].result.xSVK * delta, 2) +
+                    Math.pow(this.X[1]  - this.rinexList[index].result.ySVK * delta , 2) +
+                    Math.pow(this.X[2]  - this.rinexList[index].result.zSVK * delta, 2))  + this.result.deltaT * this.lightSpeed);
                 row.push(element);
 
                 element = this.lightSpeed;
@@ -281,11 +294,16 @@ module.exports = {
 
         this.keys.forEach((key, index) => {
             if (index < 4) {
-                let fixedC = this.map[key].c ;
+                let fixedC = this.map[key].c + this.rinexList[index].result.offset * this.lightSpeed;
 
-                result.push(fixedC - Math.sqrt(Math.pow(this.dX[0] - this.rinexList[index].result.xSVK, 2) +
-                    Math.pow(this.dX[1] - this.rinexList[index].result.ySVK , 2) +
-                    Math.pow(this.dX[2] - this.rinexList[index].result.zSVK, 2))  + this.result.deltaT * this.lightSpeed);
+                let t = this.rinexList[index].result.dayNum * 86400 + this.time.getHours() * 3600 + this.time.getMinutes() * 60 + this.time.getSeconds();
+                // let t = this.rinexList[index].result.dayNum * 86400 + this.time.getHours() * 3600 + this.time.getMinutes() * 60 + this.time.getSeconds();
+
+                let delta = t - fixedC / this.lightSpeed;
+
+                result.push(fixedC - (Math.sqrt(Math.pow(this.X[0] - this.rinexList[index].result.xSVK * delta, 2) +
+                    Math.pow(this.X[1] - this.rinexList[index].result.ySVK * delta , 2) +
+                    Math.pow(this.X[2] - this.rinexList[index].result.zSVK * delta, 2))  + this.result.deltaT * this.lightSpeed));
 
             }
         });
@@ -302,7 +320,7 @@ module.exports = {
             this.minSum = this.__getSum(r);
         } else {
             let temp = this.__getSum(r);
-            if (temp < this.minSum) {
+            if (Math.abs((this.minSum - temp)) > this.eps) {
                 flag = false;
                 this.minSum = temp;
             }
@@ -332,8 +350,9 @@ module.exports = {
         let r = this.__getR();
         let J = this.__getJ(r);
 
-        while (!this.__checkEnd(r)){
-            this.dX = math.subtract(this.dX, math.multiply(math.inv(J), r));
+        while (true){
+            this.dX = math.multiply(math.inv(J), r);
+            this.X = math.subtract(this.X, this.dX);
 
             r = this.__getR();
             J = this.__getJ(r);
