@@ -37,7 +37,7 @@ module.exports = {
 
     omega3: 7.2921151467e-5,
 
-    C: -4.44280763310,
+    C: -4.44280763310e-10,
 
     __init() {
         this.tPC = new Date(2019, 8, 13, 0, 0, 0);
@@ -271,7 +271,7 @@ module.exports = {
                let derivativeZSVK = yPlane * derivativeIK * Math.sin(IK) + derivativeYPlane * Math.sin(IK);
 
                let deltaTR = this.C * element.e0 * element.sqrtA * Math.sin(EK);
-               let offset = element.af0 + tK * (element.af1 + tK * element.af2) + deltaTR - element.TGD;
+               let offset = element.af0 + element.af1 * tK + element.af2 * (tK ** 2) - element.TGD + deltaTR;
                // let offset = element.af0 + element.af1 * tK + element.af2 * (tK ** 2) - element.TGD;
 
                result = {
@@ -283,7 +283,9 @@ module.exports = {
                    derivativeZSVK,
                    dayNum,
                    offset,
-                   t
+                   t,
+                   tOE: element.tOE,
+                   omega3: this.omega3
                };
 
                this.map[key][index].result = result;
