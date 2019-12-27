@@ -58,17 +58,17 @@ module.exports = {
         this.perfectX = this.__getValue(oParameters);
         console.log(this.perfectX);
 
-        this.X[0] = this.perfectX;
+        // this.X[0] = this.perfectX;
 
         this.perfectY = this.__getValue(oParameters);
         console.log(this.perfectY);
 
-        this.X[1] = this.perfectY;
+        // this.X[1] = this.perfectY;
 
         this.perfectZ = this.__getValue(oParameters);
         console.log(this.perfectZ);
 
-        this.X[2] = this.perfectZ;
+        // this.X[2] = this.perfectZ;
 
         let bodyStart = contents.indexOf('END OF HEADER') + 'END OF HEADER'.length + 2;
 
@@ -444,7 +444,8 @@ module.exports = {
             z: this.X[2],
             dX: math.abs(resultMas[0]),
             dY: math.abs(resultMas[1]),
-            dZ: math.abs(resultMas[2])
+            dZ: math.abs(resultMas[2]),
+            sputniks: this.keys
         }
 
     },
