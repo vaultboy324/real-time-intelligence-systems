@@ -1,0 +1,9 @@
+{
+  "server": "http://localhost:5000",
+  "files": {
+    "rinex": "echo2560.19n",
+    "sp3": "igu20706_00.sp3",
+    "observer": "gras2560.19d",
+    "calcObserver": "lroc2560.19d"
+  }
+}
