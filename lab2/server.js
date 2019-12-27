@@ -20,8 +20,8 @@ app.get("/", (req, res)=>{
    //  let structure = rinex_parser.getJson();
    //  let sp3 = sp3_parser.getJSON();
    // res.send(JSON.stringify(structure, null, "\t"));
-    console.log(observerParser.getJson(rinexParser.getJson()));
-    res.send(tableEditor.getTable());
+    res.send(observerParser.getJson(rinexParser.getJson()));
+    // res.send(tableEditor.getTable());
 });
 
 const server = app.listen(process.env.PORT || '5000', ()=> {
